@@ -6,10 +6,14 @@
         public string Name { get; set; } 
         public int CategoryId { get; set; } // Klucz obcy do kategorii
         public Category Category { get; set; } // Nawigacja do kategorii
-        public int Quantity { get; set; }
+        public decimal Quantity { get; set; }
         public string Unit { get; set; }
         public string? Barcode { get; set; }
-        public DateTime? ExpiryDate { get; set; } 
+        public DateTime? ExpiryDate { get; set; }
+
+
+        public ICollection<InventoryRecord> InventoryRecords { get; set; }
+        public ICollection<Loss> Losses { get; set; }
     }
 
 }
