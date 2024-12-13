@@ -30,17 +30,40 @@ namespace Potycznik_Backend.Data
                 .WithMany(p => p.InventoryRecords)
                 .HasForeignKey(ir => ir.ProductId);
 
-            // Pozostałe relacje
+            // Relacja Product -> Category
             modelBuilder.Entity<Product>()
                 .HasOne(p => p.Category)
                 .WithMany(c => c.Products)
                 .HasForeignKey(p => p.CategoryId);
 
+            // Relacja Category -> ParentCategory 
             modelBuilder.Entity<Category>()
                 .HasOne(c => c.ParentCategory)
                 .WithMany()
                 .HasForeignKey(c => c.ParentCategoryId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // Seedowanie danych
+            modelBuilder.Entity<Category>().HasData(
+
+                new Category { Id = 1, Name = "Bar" },
+                new Category { Id = 2, Name = "Kuchnia" },
+                new Category { Id = 3, Name = "Chemia" },
+
+                // Podkategorie Bar
+                new Category { Id = 4, Name = "Alkohol", ParentCategoryId = 1 },
+                new Category { Id = 5, Name = "Owoce", ParentCategoryId = 1 },
+                new Category { Id = 6, Name = "Suche", ParentCategoryId = 1 },
+
+                // Podkategorie Alkohol -> Alkohol Bar, Butelki, Piwo
+                new Category { Id = 7, Name = "Alkohol Bar", ParentCategoryId = 4 },
+                new Category { Id = 8, Name = "Butelki", ParentCategoryId = 4 },
+                new Category { Id = 9, Name = "Piwo", ParentCategoryId = 4 }
+
+                );
+
+               
+
         }
     }
 }
