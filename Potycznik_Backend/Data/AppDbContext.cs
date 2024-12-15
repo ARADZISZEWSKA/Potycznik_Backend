@@ -62,7 +62,30 @@ namespace Potycznik_Backend.Data
 
                 );
 
-               
+            modelBuilder.Entity<Product>().HasData(
+            new Product
+            {
+                Id = 1,
+                Name = "Piwo",
+                CategoryId = 9, // Powiązanie z kategorią Piwo
+                Quantity = 100,
+                Unit = "Litr",
+                Barcode = "1234567890",
+                ExpiryDate = null
+            },
+            new Product
+            {
+                Id = 2,
+                Name = "Wódka",
+                CategoryId = 7, // Powiązanie z kategorią Wódka
+                Quantity = 50,
+                Unit = "Litr",
+                Barcode = "9876543210",
+                ExpiryDate = null
+            }
+        );
+
+
 
         }
     }

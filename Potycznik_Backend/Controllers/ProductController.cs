@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using Potycznik_Backend.Data;
 using Potycznik_Backend.Models;
 
-
 namespace Potycznik_Backend.Controllers
 {
     [Route("api/[controller]")]
@@ -17,6 +16,7 @@ namespace Potycznik_Backend.Controllers
             _context = context;
         }
 
+        // Endpoint do pobierania wszystkich produktów
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Product>>> GetProducts()
         {
@@ -24,6 +24,7 @@ namespace Potycznik_Backend.Controllers
             return Ok(products);
         }
 
+        // Endpoint do pobierania produktu po id
         [HttpGet("{id}")]
         public async Task<ActionResult<Product>> GetProduct(int id)
         {
@@ -37,6 +38,24 @@ namespace Potycznik_Backend.Controllers
             return Ok(product);
         }
 
+        // Endpoint do pobierania produktów po ID kategorii
+        [HttpGet("category/{categoryId}")]
+        public async Task<ActionResult<IEnumerable<Product>>> GetProductsByCategory(int categoryId)
+        {
+            var products = await _context.Products
+                .Include(p => p.Category) // Załączenie powiązanej kategorii
+                .Where(p => p.CategoryId == categoryId) // Filtr po CategoryId
+                .ToListAsync();
+
+            if (!products.Any())
+            {
+                return NotFound();
+            }
+
+            return Ok(products);
+        }
+
+        // Endpoint do tworzenia produktu
         [HttpPost]
         public async Task<ActionResult<Product>> CreateProduct(Product product)
         {
@@ -46,6 +65,7 @@ namespace Potycznik_Backend.Controllers
             return CreatedAtAction(nameof(GetProduct), new { id = product.Id }, product);
         }
 
+        // Endpoint do aktualizacji produktu
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateProduct(int id, Product product)
         {
@@ -75,6 +95,7 @@ namespace Potycznik_Backend.Controllers
             return NoContent();
         }
 
+        // Endpoint do usuwania produktu
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteProduct(int id)
         {
@@ -90,6 +111,7 @@ namespace Potycznik_Backend.Controllers
             return NoContent();
         }
 
+        // Pomocnicza funkcja do sprawdzenia, czy produkt istnieje
         private bool ProductExists(int id)
         {
             return _context.Products.Any(e => e.Id == id);
