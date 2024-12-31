@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Potycznik_Backend.Data;
 using Potycznik_Backend.Models;
+using Potycznik_Backend.DTo;
 
 namespace Potycznik_Backend.Controllers
 {
@@ -43,8 +44,8 @@ namespace Potycznik_Backend.Controllers
         public async Task<ActionResult<IEnumerable<Product>>> GetProductsByCategory(int categoryId)
         {
             var products = await _context.Products
-                .Include(p => p.Category) // Załączenie powiązanej kategorii
-                .Where(p => p.CategoryId == categoryId) // Filtr po CategoryId
+                .Include(p => p.Category) 
+                .Where(p => p.CategoryId == categoryId) 
                 .ToListAsync();
 
             if (!products.Any())
@@ -56,14 +57,47 @@ namespace Potycznik_Backend.Controllers
         }
 
         // Endpoint do tworzenia produktu
-        [HttpPost]
-        public async Task<ActionResult<Product>> CreateProduct(Product product)
+        [HttpPost("add-product")]
+        public async Task<IActionResult> AddProductToTemporaryList([FromForm] ProductDTo productDto)
         {
-            _context.Products.Add(product);
-            await _context.SaveChangesAsync();
+            try
+            {
+                Console.WriteLine($"Product Name: {productDto.Name}");
+                Console.WriteLine($"Category ID: {productDto.CategoryId}");
+                Console.WriteLine($"Quantity: {productDto.Quantity}");
+                Console.WriteLine($"Unit: {productDto.Unit}");
 
-            return CreatedAtAction(nameof(GetProduct), new { id = product.Id }, product);
+                // Znalezienie kategorii
+                var category = await _context.Categories.FindAsync(productDto.CategoryId);
+                if (category == null)
+                {
+                    return BadRequest("Invalid CategoryId.");
+                }
+
+                // Tworzymy nowy produkt
+                var product = new Product
+                {
+                    Name = productDto.Name,
+                    CategoryId = productDto.CategoryId,
+                    Quantity = 0, 
+                    Unit = productDto.Unit
+                };
+
+                // Dodajemy produkt do bazy danych
+                _context.Products.Add(product);
+                await _context.SaveChangesAsync();
+
+                return Ok(new { message = "Produkt został dodany do bazy." });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+                return StatusCode(500, new { error = ex.Message, innerError = ex.InnerException?.Message });
+            }
         }
+
+
+
 
         // Endpoint do aktualizacji produktu
         [HttpPut("{id}")]
@@ -116,5 +150,49 @@ namespace Potycznik_Backend.Controllers
         {
             return _context.Products.Any(e => e.Id == id);
         }
+
+        [HttpPost("end-inventory")]
+        public async Task<IActionResult> EndInventory([FromBody] List<InventoryRecordRequest> inventoryRecords)
+        {
+            if (inventoryRecords == null || !inventoryRecords.Any())
+            {
+                return BadRequest("Brak danych do zapisania.");
+            }
+
+            // Przetwarzamy rekordy inwentaryzacyjne
+            foreach (var record in inventoryRecords)
+            {
+                var product = await _context.Products
+                    .Where(p => p.Id == record.ProductId)
+                    .FirstOrDefaultAsync();
+
+                if (product == null)
+                {
+                    return NotFound($"Produkt o ID {record.ProductId} nie istnieje.");
+                }
+
+                // Aktualizujemy ilość produktu w tabeli Products
+                product.Quantity = record.Quantity;
+
+                // Dodajemy rekord inwentaryzacyjny (tylko zapisujemy zmiany ilości)
+                var inventoryRecord = new InventoryRecord
+                {
+                    ProductId = record.ProductId,
+                    Date = DateTime.Now,
+                    Quantity = record.Quantity, // Ilość z formularza
+                };
+
+                _context.InventoryRecords.Add(inventoryRecord);
+            }
+
+            // Zapisujemy zmiany w tabeli InventoryRecords
+            await _context.SaveChangesAsync();
+
+            return Ok("Inwentaryzacja zakończona.");
+        }
+
+
     }
+
+
 }

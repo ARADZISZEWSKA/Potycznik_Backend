@@ -20,9 +20,9 @@ namespace Potycznik_Backend.Data
         {
             // Relacja Inventory -> InventoryRecords
             modelBuilder.Entity<InventoryRecord>()
-                .HasOne(ir => ir.Inventory)
+                .HasOne(ir => ir.Product)
                 .WithMany(i => i.InventoryRecords)
-                .HasForeignKey(ir => ir.InventoryId);
+                .HasForeignKey(ir => ir.ProductId);
 
             // Relacja Product -> InventoryRecords
             modelBuilder.Entity<InventoryRecord>()
@@ -63,7 +63,7 @@ namespace Potycznik_Backend.Data
                 );
 
             modelBuilder.Entity<Product>().HasData(
-            new Product
+            new Product 
             {
                 Id = 1,
                 Name = "Piwo",

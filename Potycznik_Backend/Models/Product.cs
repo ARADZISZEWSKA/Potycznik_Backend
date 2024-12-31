@@ -1,22 +1,31 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace Potycznik_Backend.Models
 {
     public class Product
     {
+
         public int Id { get; set; }
-        public string Name { get; set; } 
-        public int CategoryId { get; set; } // Klucz obcy do kategorii
+        [Required]
+        public string Name { get; set; }
+        [Required]
+        public int CategoryId { get; set; } 
         [JsonIgnore]
-        public Category Category { get; set; } // Nawigacja do kategorii
+        public Category? Category { get; set; }
+        [Column(TypeName = "decimal(18, 2)")]
+        [Required]
         public decimal Quantity { get; set; }
+        [Required]
         public string Unit { get; set; }
         public string? Barcode { get; set; }
         public DateTime? ExpiryDate { get; set; }
 
+        public string? Image { get; set; }
 
-        public ICollection<InventoryRecord> InventoryRecords { get; set; }
-        public ICollection<Loss> Losses { get; set; }
+        public ICollection<InventoryRecord> InventoryRecords { get; set; } = new List<InventoryRecord>();
+        public ICollection<Loss> Losses { get; set; } = new List<Loss>();
     }
 
 }
