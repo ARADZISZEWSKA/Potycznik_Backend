@@ -21,8 +21,9 @@ namespace Potycznik_Backend.Data
             // Relacja Inventory -> InventoryRecords
             modelBuilder.Entity<InventoryRecord>()
                 .HasOne(ir => ir.Product)
-                .WithMany(i => i.InventoryRecords)
-                .HasForeignKey(ir => ir.ProductId);
+                .WithMany()
+                .HasForeignKey(ir => ir.ProductId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             // Relacja Product -> InventoryRecords
             modelBuilder.Entity<InventoryRecord>()

@@ -44,8 +44,8 @@ namespace Potycznik_Backend.Controllers
         public async Task<ActionResult<IEnumerable<Product>>> GetProductsByCategory(int categoryId)
         {
             var products = await _context.Products
-                .Include(p => p.Category) 
-                .Where(p => p.CategoryId == categoryId) 
+                .Include(p => p.Category)
+                .Where(p => p.CategoryId == categoryId)
                 .ToListAsync();
 
             if (!products.Any())
@@ -79,7 +79,7 @@ namespace Potycznik_Backend.Controllers
                 {
                     Name = productDto.Name,
                     CategoryId = productDto.CategoryId,
-                    Quantity = 0, 
+                    Quantity = 0,
                     Unit = productDto.Unit
                 };
 
@@ -100,49 +100,76 @@ namespace Potycznik_Backend.Controllers
 
 
         // Endpoint do aktualizacji produktu
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateProduct(int id, Product product)
+        [HttpPost("update-inventory")]
+        public async Task<IActionResult> UpdateInventory([FromBody] UpdateInventoryRequestDTo request)
         {
-            if (id != product.Id)
+            if (request.InventoryRecords == null || !request.InventoryRecords.Any())
             {
-                return BadRequest();
+                return BadRequest("Brak rekordów do aktualizacji.");
             }
 
-            _context.Entry(product).State = EntityState.Modified;
+            foreach (var record in request.InventoryRecords)
+            {
+                var product = await _context.Products
+                    .FirstOrDefaultAsync(p => p.Id == record.ProductId);
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!ProductExists(id))
+                if (product == null)
                 {
-                    return NotFound();
+                    return NotFound($"Produkt o ID {record.ProductId} nie istnieje.");
                 }
-                else
+
+                // Aktualizacja ilości w produkcie
+                product.Quantity = record.Quantity;
+
+                // Dodanie rekordu inwentaryzacyjnego
+                var inventoryRecord = new InventoryRecord
                 {
-                    throw;
-                }
+                    ProductId = record.ProductId,
+                    Date = DateTime.Now,
+                    Quantity = record.Quantity
+                };
+
+                _context.InventoryRecords.Add(inventoryRecord);
             }
 
-            return NoContent();
+            await _context.SaveChangesAsync();
+            return Ok("Zaktualizowano inwentaryzację.");
         }
 
+
         // Endpoint do usuwania produktu
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteProduct(int id)
+        [HttpDelete("delete")]
+        public async Task<IActionResult> DeleteProducts([FromBody] DeleteProductRequestDTo request)
         {
-            var product = await _context.Products.FindAsync(id);
-            if (product == null)
+            if (request.ProductsToDelete == null || !request.ProductsToDelete.Any())
             {
-                return NotFound();
+                return BadRequest("Brak produktów do usunięcia.");
             }
 
-            _context.Products.Remove(product);
-            await _context.SaveChangesAsync();
+            var productsToDelete = await _context.Products
+                .Where(p => request.ProductsToDelete.Contains(p.Id))
+                .ToListAsync();
 
-            return NoContent();
+            if (!productsToDelete.Any())
+            {
+                return NotFound("Żadne produkty nie zostały znalezione do usunięcia.");
+            }
+
+            foreach (var product in productsToDelete)
+            {
+                // Dodanie rekordu inwentaryzacyjnego przed usunięciem
+                var inventoryRecord = new InventoryRecord
+                {
+                    ProductId = product.Id,
+                    Date = DateTime.Now,
+                    Quantity = 0 // Ilość 0, bo produkt jest usunięty
+                };
+                _context.InventoryRecords.Add(inventoryRecord);
+            }
+
+            _context.Products.RemoveRange(productsToDelete);
+            await _context.SaveChangesAsync();
+            return Ok("Produkty zostały usunięte.");
         }
 
         // Pomocnicza funkcja do sprawdzenia, czy produkt istnieje
@@ -152,47 +179,92 @@ namespace Potycznik_Backend.Controllers
         }
 
         [HttpPost("end-inventory")]
-        public async Task<IActionResult> EndInventory([FromBody] List<InventoryRecordRequest> inventoryRecords)
+        public async Task<IActionResult> EndInventory([FromBody] EndInventoryRequestDto request)
         {
-            if (inventoryRecords == null || !inventoryRecords.Any())
+            if (request == null || (request.InventoryRecords == null && request.ProductsToDelete == null))
             {
-                return BadRequest("Brak danych do zapisania.");
+                return BadRequest("Invalid data.");
             }
 
-            // Przetwarzamy rekordy inwentaryzacyjne
-            foreach (var record in inventoryRecords)
-            {
-                var product = await _context.Products
-                    .Where(p => p.Id == record.ProductId)
-                    .FirstOrDefaultAsync();
+            using var transaction = await _context.Database.BeginTransactionAsync();
 
-                if (product == null)
+            try
+            {
+                // Aktualizacja produktów
+                if (request.InventoryRecords != null && request.InventoryRecords.Any())
                 {
-                    return NotFound($"Produkt o ID {record.ProductId} nie istnieje.");
+                    var productIds = request.InventoryRecords.Select(r => r.ProductId).ToHashSet();
+                    var products = await _context.Products
+                        .Where(p => productIds.Contains(p.Id))
+                        .ToListAsync();
+
+                    foreach (var record in request.InventoryRecords)
+                    {
+                        var product = products.FirstOrDefault(p => p.Id == record.ProductId);
+                        if (product == null)
+                        {
+                            return BadRequest($"Product with ID {record.ProductId} not found.");
+                        }
+
+                        // Zaktualizuj ilość w produkcie
+                        product.Quantity = record.Quantity;
+
+                        // Dodaj rekord do InventoryRecords
+                        var inventoryRecord = new InventoryRecord
+                        {
+                            ProductId = product.Id,
+                            Quantity = record.Quantity,
+                            Date = DateTime.UtcNow,
+                            ProductName = product.Name
+                        };
+                        _context.InventoryRecords.Add(inventoryRecord);
+                    }
+
+                    // Zapisz zmiany w produktach
+                    await _context.SaveChangesAsync();
                 }
 
-                // Aktualizujemy ilość produktu w tabeli Products
-                product.Quantity = record.Quantity;
-
-                // Dodajemy rekord inwentaryzacyjny (tylko zapisujemy zmiany ilości)
-                var inventoryRecord = new InventoryRecord
+                // Usuwanie produktów
+                if (request.ProductsToDelete != null && request.ProductsToDelete.Any())
                 {
-                    ProductId = record.ProductId,
-                    Date = DateTime.Now,
-                    Quantity = record.Quantity, // Ilość z formularza
-                };
+                    var productsToDelete = await _context.Products
+                        .Where(p => request.ProductsToDelete.Contains(p.Id))
+                        .ToListAsync();
 
-                _context.InventoryRecords.Add(inventoryRecord);
+                    foreach (var product in productsToDelete)
+                    {
+                        // Dodaj rekord do InventoryRecords z ilością ujemną
+                        var inventoryRecord = new InventoryRecord
+                        {
+                            ProductId = product.Id,
+                            Quantity = -product.Quantity,
+                            Date = DateTime.UtcNow,
+                            ProductName = product.Name
+                        };
+                        _context.InventoryRecords.Add(inventoryRecord);
+                    }
+
+                    // Usuń produkty
+                    _context.Products.RemoveRange(productsToDelete);
+
+                    // Zapisz zmiany w usuniętych produktach
+                    await _context.SaveChangesAsync();
+                }
+
+                // Zatwierdź transakcję
+                await transaction.CommitAsync();
+
+                return Ok(new { message = "Inwentaryzacja zakończona pomyślnie" });
             }
-
-            // Zapisujemy zmiany w tabeli InventoryRecords
-            await _context.SaveChangesAsync();
-
-            return Ok("Inwentaryzacja zakończona.");
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                return StatusCode(500, new { error = ex.Message });
+            }
         }
 
 
-    }
 
+    }
 
 }
