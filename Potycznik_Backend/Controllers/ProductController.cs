@@ -36,6 +36,10 @@ namespace Potycznik_Backend.Controllers
                 return NotFound();
             }
 
+            product.Image = product.Image != null
+        ? $"/images/{Path.GetFileName(product.Image)}"
+        : "/assets/placeholder.jpg";
+
             return Ok(product);
         }
 
@@ -74,13 +78,37 @@ namespace Potycznik_Backend.Controllers
                     return BadRequest("Invalid CategoryId.");
                 }
 
+                // Obsługa obrazu
+                string relativeImagePath = null;
+                if (productDto.Image != null)
+                {
+                    var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
+                    if (!Directory.Exists(uploadsFolder))
+                    {
+                        Directory.CreateDirectory(uploadsFolder);
+                    }
+
+                    var uniqueFileName = Guid.NewGuid().ToString() + "_" + productDto.Image.FileName;
+                    var absoluteImagePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                    // Kopiowanie pliku na serwer
+                    using (var fileStream = new FileStream(absoluteImagePath, FileMode.Create))
+                    {
+                        await productDto.Image.CopyToAsync(fileStream);
+                    }
+
+                    // Ustal relatywną ścieżkę do obrazu
+                    relativeImagePath = Path.Combine("images", uniqueFileName).Replace("\\", "/");
+                }
+
                 // Tworzymy nowy produkt
                 var product = new Product
                 {
                     Name = productDto.Name,
                     CategoryId = productDto.CategoryId,
                     Quantity = 0,
-                    Unit = productDto.Unit
+                    Unit = productDto.Unit,
+                    Image = relativeImagePath,
                 };
 
                 // Dodajemy produkt do bazy danych
