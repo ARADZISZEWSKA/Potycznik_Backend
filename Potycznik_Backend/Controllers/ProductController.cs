@@ -242,6 +242,7 @@ namespace Potycznik_Backend.Controllers
                         {
                             ProductId = product.Id,
                             Quantity = record.Quantity,
+                            PreviousQuantity = record.PreviousQuantity,
                             Date = DateTime.UtcNow,
                             ProductName = product.Name
                         };
@@ -266,6 +267,7 @@ namespace Potycznik_Backend.Controllers
                         {
                             ProductId = product.Id,
                             Quantity = -product.Quantity,
+                            PreviousQuantity = product.Quantity,
                             Date = DateTime.UtcNow,
                             ProductName = product.Name
                         };

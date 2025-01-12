@@ -25,6 +25,10 @@ namespace Potycznik_Backend.Data
                 .HasForeignKey(ir => ir.ProductId)
                 .OnDelete(DeleteBehavior.SetNull);
 
+            /*modelBuilder.Entity<Inventory>()
+                .HasIndex(i => i.Date)
+                .IsUnique();
+*/
             // Relacja Product -> InventoryRecords
             modelBuilder.Entity<InventoryRecord>()
                 .HasOne(ir => ir.Product)
