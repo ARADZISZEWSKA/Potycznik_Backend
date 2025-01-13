@@ -244,7 +244,8 @@ namespace Potycznik_Backend.Controllers
                             Quantity = record.Quantity,
                             PreviousQuantity = record.PreviousQuantity,
                             Date = DateTime.UtcNow,
-                            ProductName = product.Name
+                            ProductName = product.Name,
+                            CategoryId = product.CategoryId
                         };
                         _context.InventoryRecords.Add(inventoryRecord);
                     }
@@ -269,7 +270,7 @@ namespace Potycznik_Backend.Controllers
                             Quantity = -product.Quantity,
                             PreviousQuantity = product.Quantity,
                             Date = DateTime.UtcNow,
-                            ProductName = product.Name
+                            ProductName = product.Name,
                         };
                         _context.InventoryRecords.Add(inventoryRecord);
                     }

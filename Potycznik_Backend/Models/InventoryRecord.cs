@@ -6,7 +6,8 @@ namespace Potycznik_Backend.Models
     {
         public int Id { get; set; }
         public int? ProductId { get; set; } // Klucz obcy do produktu
-        public Product Product { get; set; } // Nawigacja do produktu
+        public Product Product { get; set; }
+        public int? CategoryId { get; set; }    
         public DateTime Date { get; set; } 
         public decimal Quantity { get; set; }
         public decimal PreviousQuantity { get; set; }
