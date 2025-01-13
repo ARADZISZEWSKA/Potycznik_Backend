@@ -1,7 +1,10 @@
-﻿/*using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Potycznik_Backend.Data;
 using Potycznik_Backend.Models;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Potycznik_Backend.Controllers
 {
@@ -16,15 +19,17 @@ namespace Potycznik_Backend.Controllers
             _context = context;
         }
 
-        // Grupowanie rekordów InventoryRecords po dacie i tworzenie grup Inventory
-       // [HttpPost("group-records")]
-       *//* public async Task<IActionResult> GroupRecordsByDate()
+        // Grupowanie rekordów InventoryRecords po dacie
+        [HttpPost("group-records-by-date")]
+        public async Task<IActionResult> GroupRecordsByDate()
         {
             try
             {
-                // Pobierz wszystkie rekordy bez przypisanej inwentaryzacji
+                // Pobranie wszystkich rekordów InventoryRecords
                 var ungroupedRecords = await _context.InventoryRecords
-                    .Where(ir => ir.InventoryId == null)
+                    .Where(ir => !_context.Inventories
+                        .SelectMany(i => i.InventoryRecords.Select(r => r.Id))
+                        .Contains(ir.Id)) // Rekordy bez przypisanej grupy
                     .ToListAsync();
 
                 if (!ungroupedRecords.Any())
@@ -34,18 +39,20 @@ namespace Potycznik_Backend.Controllers
 
                 // Grupowanie rekordów po dacie (tylko dzień)
                 var groupedByDate = ungroupedRecords
-                    .GroupBy(ir => ir.Date.Date)
+                    .GroupBy(ir => ir.Date.Date) // Grupowanie po dacie
                     .ToList();
 
-                // Lista nowych grup Inventory
-                var inventoriesToAdd = groupedByDate.Select(group => new Inventory
+                // Tworzenie nowych grup Inventory
+                foreach (var group in groupedByDate)
                 {
-                    Date = group.Key,
-                    InventoryRecords = group.ToList() // Przypisanie rekordów do grupy
-                }).ToList();
+                    var newInventory = new Inventory
+                    {
+                        Date = group.Key,
+                        InventoryRecords = group.ToList() // Powiązanie rekordów
+                    };
 
-                // Dodanie nowych grup Inventory do kontekstu
-                _context.Inventories.AddRange(inventoriesToAdd);
+                    _context.Inventories.Add(newInventory);
+                }
 
                 // Zapisanie zmian w bazie danych
                 await _context.SaveChangesAsync();
@@ -60,38 +67,30 @@ namespace Potycznik_Backend.Controllers
             {
                 return StatusCode(500, new { error = ex.Message });
             }
-        }*//*
-
-        // Pobieranie szczegółów grupy Inventory na podstawie ID
-        [HttpGet("inventory/{id}")]
-        public async Task<IActionResult> GetInventoryWithRecords(int id)
-        {
-            var inventory = await _context.Inventories
-                .Include(i => i.InventoryRecords) // Załaduj powiązane rekordy
-                .FirstOrDefaultAsync(i => i.Id == id);
-
-            if (inventory == null)
-            {
-                return NotFound(new { error = "Nie znaleziono grupy Inventory." });
-            }
-
-            return Ok(inventory);
         }
 
-        // Pobieranie rekordów InventoryRecords na podstawie daty
-        [HttpGet("records-by-date/{date}")]
-        public async Task<IActionResult> GetRecordsByDate(DateTime date)
+        // Pobieranie szczegółów grupy Inventory na podstawie daty
+        [HttpGet("inventory-by-date/{date}")]
+        public async Task<IActionResult> GetInventoryWithRecordsByDate(DateTime date)
         {
-            var inventory = await _context.Inventories
-                .Include(i => i.InventoryRecords) // Załaduj powiązane rekordy
-                .FirstOrDefaultAsync(i => i.Date.Date == date.Date);
-
-            if (inventory == null)
+            try
             {
-                return NotFound(new { error = "Nie znaleziono rekordów dla podanej daty." });
-            }
+                // Znalezienie grupy Inventory na podstawie daty
+                var inventory = await _context.Inventories
+                    .Include(i => i.InventoryRecords)
+                    .FirstOrDefaultAsync(i => i.Date.Date == date.Date);
 
-            return Ok(inventory.InventoryRecords); // Zwróć rekordy z grupy
+                if (inventory == null)
+                {
+                    return NotFound(new { error = "Nie znaleziono grupy Inventory dla podanej daty." });
+                }
+
+                return Ok(inventory);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message });
+            }
         }
 
         // Pobieranie wszystkich grup Inventory
@@ -112,9 +111,9 @@ namespace Potycznik_Backend.Controllers
             try
             {
                 var availableDates = await _context.Inventories
-                    .Select(i => i.Date.Date)  // Pobieramy tylko datę (bez godziny)
-                    .Distinct()                 // Unikalne daty
-                    .ToListAsync();             // Tu jest ważne, żeby to była lista
+                    .Select(i => i.Date.Date) // Pobieranie unikalnych dat
+                    .Distinct()
+                    .ToListAsync();
 
                 return Ok(availableDates);
             }
@@ -123,8 +122,5 @@ namespace Potycznik_Backend.Controllers
                 return StatusCode(500, new { error = ex.Message });
             }
         }
-
-
     }
 }
-*/
