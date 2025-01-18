@@ -106,7 +106,7 @@ namespace Potycznik_Backend.Controllers
                 {
                     Name = productDto.Name,
                     CategoryId = productDto.CategoryId,
-                    Quantity = 0,
+                    Quantity = productDto.Quantity,
                     Unit = productDto.Unit,
                     Image = relativeImagePath,
                 };
@@ -267,7 +267,7 @@ namespace Potycznik_Backend.Controllers
                         var inventoryRecord = new InventoryRecord
                         {
                             ProductId = product.Id,
-                            Quantity = -product.Quantity,
+                            Quantity = 0,
                             PreviousQuantity = product.Quantity,
                             Date = DateTime.UtcNow,
                             ProductName = product.Name,

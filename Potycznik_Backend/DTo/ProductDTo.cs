@@ -9,7 +9,7 @@ namespace Potycznik_Backend.DTo
         public string Name { get; set; }
 
         [Required]
-        public int CategoryId { get; set; } // Wystarczy ID kategorii
+        public int CategoryId { get; set; } 
 
         [Required]
         public decimal Quantity { get; set; }

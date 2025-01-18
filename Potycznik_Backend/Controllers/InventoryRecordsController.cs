@@ -39,7 +39,12 @@ namespace Potycznik_Backend.Controllers
 
                 // Grupowanie rekordów po dacie (tylko dzień)
                 var groupedByDate = ungroupedRecords
-                    .GroupBy(ir => ir.Date.Date) // Grupowanie po dacie
+                    .GroupBy(ir => ir.Date.Date)
+                    .Select(group => new
+                    {
+                        Date = group.Key,
+                        Records = group.ToList()  // Powiązanie rekordów
+                    })
                     .ToList();
 
                 // Tworzenie nowych grup Inventory
@@ -47,8 +52,8 @@ namespace Potycznik_Backend.Controllers
                 {
                     var newInventory = new Inventory
                     {
-                        Date = group.Key,
-                        InventoryRecords = group.ToList() // Powiązanie rekordów
+                        Date = group.Date,
+                        InventoryRecords = group.Records // Powiązanie rekordów
                     };
 
                     _context.Inventories.Add(newInventory);
@@ -60,7 +65,7 @@ namespace Potycznik_Backend.Controllers
                 return Ok(new
                 {
                     message = "Rekordy zostały pogrupowane.",
-                    groupedDates = groupedByDate.Select(g => g.Key).ToList() // Zwrot pogrupowanych dat
+                    groupedDates = groupedByDate.Select(g => g.Date).ToList() // Zwrot pogrupowanych dat
                 });
             }
             catch (Exception ex)
@@ -75,23 +80,25 @@ namespace Potycznik_Backend.Controllers
         {
             try
             {
-                // Znalezienie grupy Inventory na podstawie daty
-                var inventory = await _context.Inventories
+                // Znalezienie wszystkich grup Inventory na podstawie daty
+                var inventories = await _context.Inventories
                     .Include(i => i.InventoryRecords)
-                    .FirstOrDefaultAsync(i => i.Date.Date == date.Date);
+                    .Where(i => i.Date.Date == date.Date) // Filtracja po pełnej dacie
+                    .ToListAsync();
 
-                if (inventory == null)
+                if (inventories == null || inventories.Count == 0)
                 {
-                    return NotFound(new { error = "Nie znaleziono grupy Inventory dla podanej daty." });
+                    return NotFound(new { error = "Nie znaleziono grup Inventory dla podanej daty." });
                 }
 
-                return Ok(inventory);
+                return Ok(inventories);
             }
             catch (Exception ex)
             {
                 return StatusCode(500, new { error = ex.Message });
             }
         }
+
 
         // Pobieranie wszystkich grup Inventory
         [HttpGet("all-inventories")]
