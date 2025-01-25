@@ -3,8 +3,9 @@
     public class Loss
     {
         public int Id { get; set; } 
-        public int ProductId { get; set; } // Klucz obcy do produktu
-        public Product Product { get; set; } // Nawigacja do produktu
+        public int? ProductId { get; set; }
+        public string ProductName { get; set; }
+        public int CategoryId { get; set; }
         public DateTime Date { get; set; } 
         public int Quantity { get; set; } 
         public string Reason { get; set; } 
