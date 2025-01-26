@@ -19,7 +19,6 @@ namespace Potycznik_Backend.DTo
 
         public string? Barcode { get; set; }
         public DateTime? ExpiryDate { get; set; }
-        public string? SerialNumber { get; set; }
-        public IFormFile? Image { get; set; } // Obraz jako plik przesyłany w żądaniu
+        public IFormFile? Image { get; set; } 
     }
 }

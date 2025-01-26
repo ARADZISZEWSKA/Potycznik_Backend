@@ -66,10 +66,6 @@ namespace Potycznik_Backend.Controllers
         {
             try
             {
-                Console.WriteLine($"Product Name: {productDto.Name}");
-                Console.WriteLine($"Category ID: {productDto.CategoryId}");
-                Console.WriteLine($"Quantity: {productDto.Quantity}");
-                Console.WriteLine($"Unit: {productDto.Unit}");
 
                 // Znalezienie kategorii
                 var category = await _context.Categories.FindAsync(productDto.CategoryId);
@@ -109,6 +105,8 @@ namespace Potycznik_Backend.Controllers
                     Quantity = productDto.Quantity,
                     Unit = productDto.Unit,
                     Image = relativeImagePath,
+                    Barcode = productDto.Barcode, 
+                    ExpiryDate = productDto.ExpiryDate?.Date,
                 };
 
                 // Dodajemy produkt do bazy danych
