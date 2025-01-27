@@ -65,7 +65,7 @@ namespace Potycznik_Backend.Controllers
             {
                 ProductId = product.Id,
                 ProductName = product.Name,
-                CategoryId = categoryId,  // Jeśli categoryId jest null, ustawiamy domyślną wartość 0
+                CategoryId = categoryId,  
                 Quantity = lossDto.Quantity,
                 Reason = lossDto.Reason,
                 Date = DateTime.UtcNow 
