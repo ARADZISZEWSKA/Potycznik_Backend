@@ -10,6 +10,7 @@ namespace Potycznik_Backend.Data
         }
 
         //tabele
+        public DbSet<User> Users { get; set; }
         public DbSet<Category> Categories { get; set; }
         public DbSet<Product> Products { get; set; }
         public DbSet<InventoryRecord> InventoryRecords { get; set; }
@@ -18,6 +19,12 @@ namespace Potycznik_Backend.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<User>()
+                .HasOne(u => u.Admin)
+                .WithMany()
+                .HasForeignKey(u => u.AdminId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             // Relacja Inventory -> InventoryRecords
             modelBuilder.Entity<InventoryRecord>()
                 .HasOne(ir => ir.Product)
