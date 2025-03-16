@@ -66,6 +66,15 @@ namespace Potycznik_Backend.Controllers
         {
             try
             {
+                if (!string.IsNullOrEmpty(productDto.Barcode))
+                {
+                    var existingProduct = await _context.Products
+                        .FirstOrDefaultAsync(p => p.Barcode == productDto.Barcode);
+                    if (existingProduct != null)
+                    {
+                        return BadRequest("Produkt o podanym kodzie kreskowym już istnieje.");
+                    }
+                }
 
                 // Znalezienie kategorii
                 var category = await _context.Categories.FindAsync(productDto.CategoryId);
@@ -290,6 +299,21 @@ namespace Potycznik_Backend.Controllers
                 await transaction.RollbackAsync();
                 return StatusCode(500, new { error = ex.Message });
             }
+        }
+
+        [HttpGet("barcode/{barcode}")]
+        public async Task<ActionResult<Product>> GetProductByBarcode(string barcode)
+        {
+            var product = await _context.Products
+                .Include(p => p.Category)
+                .FirstOrDefaultAsync(p => p.Barcode == barcode);
+
+            if (product == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(product);
         }
 
 
