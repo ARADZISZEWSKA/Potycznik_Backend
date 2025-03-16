@@ -50,7 +50,7 @@ app.UseStaticFiles(new StaticFileOptions
     RequestPath = "/images"
 });
 
-app.UseCors("AllowLocalhost");
+app.UseCors("AllowAll");
 
 app.UseRouting();
 
