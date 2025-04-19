@@ -23,6 +23,7 @@ namespace Potycznik_Backend.Models
         public DateTime? ExpiryDate { get; set; }
 
         public string? Image { get; set; }
+        public decimal MinimalQuantity { get; set; }
 
         public ICollection<InventoryRecord> InventoryRecords { get; set; } = new List<InventoryRecord>();
         public ICollection<Loss> Losses { get; set; } = new List<Loss>();

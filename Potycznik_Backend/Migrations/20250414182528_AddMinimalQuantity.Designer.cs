@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Potycznik_Backend.Data;
 
@@ -11,9 +12,11 @@ using Potycznik_Backend.Data;
 namespace Potycznik_Backend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250414182528_AddMinimalQuantity")]
+    partial class AddMinimalQuantity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -207,8 +210,8 @@ namespace Potycznik_Backend.Migrations
                     b.Property<string>("Image")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<decimal>("MinimalQuantity")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<int>("MinimalQuantity")
+                        .HasColumnType("int");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -233,7 +236,7 @@ namespace Potycznik_Backend.Migrations
                             Id = 1,
                             Barcode = "1234567890",
                             CategoryId = 9,
-                            MinimalQuantity = 0m,
+                            MinimalQuantity = 0,
                             Name = "Piwo",
                             Quantity = 100m,
                             Unit = "Litr"
@@ -243,7 +246,7 @@ namespace Potycznik_Backend.Migrations
                             Id = 2,
                             Barcode = "9876543210",
                             CategoryId = 7,
-                            MinimalQuantity = 0m,
+                            MinimalQuantity = 0,
                             Name = "Wódka",
                             Quantity = 50m,
                             Unit = "Litr"

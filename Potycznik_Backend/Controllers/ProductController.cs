@@ -68,11 +68,10 @@ namespace Potycznik_Backend.Controllers
             {
                 if (!string.IsNullOrEmpty(productDto.Barcode))
                 {
-                    var existingProduct = await _context.Products
-                        .FirstOrDefaultAsync(p => p.Barcode == productDto.Barcode);
-                    if (existingProduct != null)
+                    bool exists = await _context.Products.AnyAsync(p => p.Barcode == productDto.Barcode);
+                    if (exists)
                     {
-                        return BadRequest("Produkt o podanym kodzie kreskowym już istnieje.");
+                        return BadRequest(new { message = "Produkt o podanym kodzie kreskowym już istnieje." });
                     }
                 }
 
@@ -112,6 +111,7 @@ namespace Potycznik_Backend.Controllers
                     Name = productDto.Name,
                     CategoryId = productDto.CategoryId,
                     Quantity = productDto.Quantity,
+                    MinimalQuantity = productDto.MinimalQuantity,
                     Unit = productDto.Unit,
                     Image = relativeImagePath,
                     Barcode = productDto.Barcode, 
@@ -126,7 +126,6 @@ namespace Potycznik_Backend.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error: {ex.Message}");
                 return StatusCode(500, new { error = ex.Message, innerError = ex.InnerException?.Message });
             }
         }

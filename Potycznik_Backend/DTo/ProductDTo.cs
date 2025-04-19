@@ -13,6 +13,7 @@ namespace Potycznik_Backend.DTo
 
         [Required]
         public decimal Quantity { get; set; }
+        public decimal MinimalQuantity { get; set; }
 
         [Required]
         public string Unit { get; set; }
